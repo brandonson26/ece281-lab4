@@ -11,8 +11,8 @@
 --| ---------------------------------------------------------------------------
 --|
 --| FILENAME      : top_basys3.vhd
---| AUTHOR(S)     : Capt Phillip Warner
---| CREATED       : 3/9/2018  MOdified by Capt Dan Johnson (3/30/2020)
+--| AUTHOR(S)     : Capt Phillip Warner, Brandon Son
+--| CREATED       : 3/9/2018  Modified by Brandon Son (04/09/2024)
 --| DESCRIPTION   : This file implements the top level module for a BASYS 3 to 
 --|					drive the Lab 4 Design Project (Advanced Elevator Controller).
 --|
@@ -92,21 +92,71 @@ end top_basys3;
 architecture top_basys3_arch of top_basys3 is 
   
 	-- declare components and signals
+	component clock_divider is
+        generic (constant k_DIV : natural := 2); -- How many clk cycles until slow clock toggles
+                                                   -- Effectively, you divide the clk double this 
+                                                   -- number (e.g., k_DIV := 2 --> clock divider of 4)
+        port ( i_clk    : in std_logic;
+               i_reset  : in std_logic;           -- asynchronous
+               o_clk    : out std_logic           -- divided (slow) clock
+        );
+    end component clock_divider;
+	
+    component elevator_controller_fsm is
+        Port ( i_clk     : in  STD_LOGIC;
+               i_reset   : in  STD_LOGIC;
+               i_stop    : in  STD_LOGIC; -- '1' is Stop, '0' is Go
+               i_up_down : in  STD_LOGIC; -- '1' is Up, '0' is Down
+               o_floor   : out STD_LOGIC_VECTOR (3 downto 0)           
+             );
+    end component elevator_controller_fsm;
+    
+    component sevenSegDecoder is
+        Port ( i_D : in STD_LOGIC_VECTOR (3 downto 0);
+               o_S : out STD_LOGIC_VECTOR (6 downto 0));
+    end component sevenSegDecoder;
+    
+    signal w_clk, w_reset, w_stop, w_up_down : std_logic := '0';
+    signal w_floor : std_logic_vector(3 downto 0) := (others => '0');
 
   
 begin
 	-- PORT MAPS ----------------------------------------
-
+    elevator_controller_inst : elevator_controller_fsm port map (
+        i_clk   => w_clk,
+        i_reset   => btnU or btnR,
+        i_stop    => sw(0),
+        i_up_down => sw(1),
+        o_floor   => w_floor
+    );
+    
+    clock_divider_inst : clock_divider
+        generic map (k_DIV => 25000000)
+        port map (
+            i_clk => clk,
+            i_reset => btnL or btnU,
+            o_clk => w_clk  
+        );
+        
+    sevenSegDecoder_inst : sevenSegDecoder port map (
+        i_D => w_floor,
+        o_S => seg
+    );
 	
 	
 	-- CONCURRENT STATEMENTS ----------------------------
 	
 	-- LED 15 gets the FSM slow clock signal. The rest are grounded.
-	
+	led(14 downto 0) <= (others => '0');
+	led(15) <= w_clk;
 
 	-- leave unused switches UNCONNECTED. Ignore any warnings this causes.
 	
 	-- wire up active-low 7SD anodes (an) as required
 	-- Tie any unused anodes to power ('1') to keep them off
+	an(0) <= '1';
+	an(1) <= '1';
+	an(2) <= '0';
+	an(3) <= '1';
 	
 end top_basys3_arch;
