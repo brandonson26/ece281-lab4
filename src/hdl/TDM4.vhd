@@ -11,8 +11,8 @@
 --| ---------------------------------------------------------------------------
 --|
 --| FILENAME      : TDM4.vhd
---| AUTHOR(S)     : Capt Phillip Warner
---| CREATED       : 03/2017
+--| AUTHOR(S)     : Capt Phillip Warner, Brandon Son
+--| CREATED       : 03/2017 Modified 4/16/2024
 --| DESCRIPTION   : This file implements a 4 to 1 Time Division MUX (TDM).
 --|					Input and output data has a variable width set by k_WIDTH.
 --|					An internal MUX select line is connected to a 2 bit counter 

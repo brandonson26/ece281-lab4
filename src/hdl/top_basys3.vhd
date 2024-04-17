@@ -118,23 +118,26 @@ architecture top_basys3_arch of top_basys3 is
     
     signal w_clk, w_reset, w_stop, w_up_down : std_logic := '0';
     signal w_floor : std_logic_vector(3 downto 0) := (others => '0');
-
+    signal w_master_reset : std_logic;
+    
   
 begin
+    w_master_reset <= btnU or btnR;
 	-- PORT MAPS ----------------------------------------
     elevator_controller_inst : elevator_controller_fsm port map (
         i_clk   => w_clk,
-        i_reset   => btnU or btnR,
+        i_reset   => w_master_reset,
         i_stop    => sw(0),
         i_up_down => sw(1),
         o_floor   => w_floor
     );
     
+    w_master_reset <= btnL or btnU;
     clock_divider_inst : clock_divider
         generic map (k_DIV => 25000000)
         port map (
             i_clk => clk,
-            i_reset => btnL or btnU,
+            i_reset => w_master_reset,
             o_clk => w_clk  
         );
         
